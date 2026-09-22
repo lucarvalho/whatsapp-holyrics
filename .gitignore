@@ -1,0 +1,41 @@
+# Segredos
+.env
+.env.*
+!.env.example
+
+# Credenciais
+*.credentials
+.smb-credentials*
+*credentials*
+
+# Dados e mídias
+data/
+logs/
+
+# Python
+__pycache__/
+*.py[cod]
+*.so
+
+# Ambiente virtual
+.venv/
+venv/
+env/
+
+# Arquivos temporários
+*.part
+*.tmp
+*.swp
+
+# Sistema
+.DS_Store
+Thumbs.db
+
+# Backups locais
+*-backup/
+*.tar.gz
+
+# Arquivos específicos da instalação
+*.save
+*.bak
+*.old

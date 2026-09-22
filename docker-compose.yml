@@ -1,0 +1,44 @@
+services:
+  holyrics-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: holyrics-api
+    env_file:
+      - .env
+    environment:
+      - TZ=America/Sao_Paulo
+    restart: unless-stopped
+    user: "1000:1000"
+    working_dir: /app
+
+    volumes:
+      - ./app:/app
+      - ./data:/data
+      - ./logs:/logs
+      - /mnt/holyrics-entrada:/windows/entrada
+
+    ports:
+      - "8080:8080"
+
+    command: >
+      uvicorn main:app
+      --host 0.0.0.0
+      --port 8080
+
+  holyrics-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: holyrics-worker
+    environment:
+      - TZ=America/Sao_Paulo
+    restart: unless-stopped
+    user: "1000:1000"
+    working_dir: /app
+    volumes:
+      - ./app:/app
+      - ./data:/data
+      - ./logs:/logs
+      - /mnt/holyrics-entrada:/windows/entrada
+    command: python /app/queue_worker.py

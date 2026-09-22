@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Apresentações - Holyrics</title>
+
+    <style>
+
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1100px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            border: 1px solid #ccc;
+            padding: 12px;
+            text-align: left;
+        }
+
+        th {
+            background: #f5f5f5;
+        }
+
+        .button {
+            display: inline-block;
+            padding: 8px 12px;
+            border: 1px solid #999;
+            border-radius: 6px;
+            text-decoration: none;
+            color: inherit;
+            margin-right: 5px;
+        }
+
+        .filename {
+            word-break: break-word;
+            font-weight: bold;
+        }
+
+        .empty {
+            padding: 30px;
+            border: 1px dashed #aaa;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+    <div class="header">
+
+        <h1>📄 Apresentações</h1>
+
+        <a href="/">
+            ← Início
+        </a>
+
+    </div>
+
+    {% if files %}
+
+        <table>
+
+            <thead>
+
+                <tr>
+
+                    <th>
+                        Arquivo
+                    </th>
+
+                    <th>
+                        Tamanho
+                    </th>
+
+                    <th>
+                        Tipo
+                    </th>
+
+                    <th>
+                        Ações
+                    </th>
+
+                </tr>
+
+            </thead>
+
+            <tbody>
+
+                {% for file in files %}
+
+                    <tr>
+
+                        <td class="filename">
+
+                            {{ file.name }}
+
+                        </td>
+
+                        <td>
+
+                            {{ file.size }}
+
+                        </td>
+
+                        <td>
+
+                            {{ file.extension }}
+
+                        </td>
+
+                        <td>
+
+                            <a
+                                class="button"
+                                href="{{ file.url }}"
+                                target="_blank"
+                            >
+                                👁️ Abrir
+                            </a>
+
+                            <a
+                                class="button"
+                                href="{{ file.url }}"
+                                download
+                            >
+                                ⬇️ Baixar
+                            </a>
+
+                        </td>
+
+                    </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    {% else %}
+
+        <div class="empty">
+
+            Nenhuma apresentação encontrada.
+
+        </div>
+
+    {% endif %}
+
+</body>
+
+</html>
