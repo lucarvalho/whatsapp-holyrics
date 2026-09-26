@@ -605,7 +605,7 @@ def verify_whatsapp_webhook(
     hub_verify_token: str = Query(None, alias="hub.verify_token"),
     hub_challenge: str = Query(None, alias="hub.challenge")
 ):
-    VERIFY_TOKEN = "HolyricsMetaWebhook2026"
+    VERIFY_TOKEN = os.getenv("VERIFY_TOKEN")
 
     if hub_mode == "subscribe" and hub_verify_token == VERIFY_TOKEN:
         return int(hub_challenge)
@@ -709,7 +709,939 @@ async def receive_whatsapp_webhook(request: Request):
 
                             return
 
+                        elif current_menu == "horarios":
+
+                            if text.strip() == "0":
+
+                                whatsapp_menu_state.pop(sender, None)
+
+                                asyncio.create_task(
+                                    send_whatsapp_message(
+                                        sender,
+                                        "👋 Voltamos ao menu principal.\n\n"
+                                        "Escolha uma opção:\n\n"
+                                        "1️⃣ Horários\n"
+                                        "2️⃣ Escalas\n"
+                                        "3️⃣ Eventos\n"
+                                        "4️⃣ Envio de Mídias"
+                                    )
+                                )
+
+                            else:
+
+                                asyncio.create_task(
+                                    send_whatsapp_message(
+                                        sender,
+                                        "❌ Opção inválida.\n\n"
+                                        "Digite 0 para voltar ao menu principal."
+                                    )
+                                )
+
+                        elif current_menu == "eventos_menu":
+
+                            if text.strip() == "1":
+
+                                import sys
+                                sys.path.insert(
+                                    0,
+                                    "/opt/holyrics/escala"
+                                )
+
+                                from eventos import (
+                                    consultar_proximos,
+                                    formatar_eventos
+                                )
+
+                                resultado = consultar_proximos()
+
+                                asyncio.create_task(
+                                    send_whatsapp_message(
+                                        sender,
+                                        formatar_eventos(
+                                            resultado,
+                                            "📅 PRÓXIMOS EVENTOS"
+                                        )
+                                    )
+                                )
+
+                                whatsapp_menu_state[sender] = "eventos_pos_resultado"
+
+                            elif text.strip() == "2":
+
+                                whatsapp_menu_state[sender] = "eventos_data"
+
+                                asyncio.create_task(
+                                    send_whatsapp_message(
+                                        sender,
+                                        "📅 CONSULTAR EVENTOS POR DATA\n\n"
+                                        "Digite a data no formato:\n"
+                                        "DD/MM/AAAA\n\n"
+                                        "0️⃣ Voltar"
+                                    )
+                                )
+
+                            elif text.strip() == "3":
+
+                                whatsapp_menu_state[sender] = "eventos_mes"
+
+                                asyncio.create_task(
+                                    send_whatsapp_message(
+                                        sender,
+                                        "📅 CONSULTAR EVENTOS POR MÊS\n\n"
+                                        "Digite o mês no formato:\n"
+                                        "MM/AAAA\n\n"
+                                        "Exemplo: 10/2026\n\n"
+                                        "0️⃣ Voltar"
+                                    )
+                                )
+
+                               #from escala import eventos
+                            elif text.strip() == "4":
+
+                                import sys
+                                sys.path.insert(
+                                    0,
+                                    "/opt/holyrics/escala"
+                                )
+
+                                from eventos import (
+                                    consultar_todos,
+                                    formatar_eventos
+                                )
+
+                                resultado = consultar_todos()
+
+                                asyncio.create_task(
+                                    send_whatsapp_message(
+                                        sender,
+                                        formatar_eventos(
+                                            resultado,
+                                            "📅 TODOS OS EVENTOS"
+                                        )
+                                    )
+                                )
+
+                                whatsapp_menu_state[sender] = "eventos_pos_resultado"
+
+                            elif text.strip() == "0":
+
+                                whatsapp_menu_state.pop(sender, None)
+
+                                asyncio.create_task(
+                                    send_whatsapp_message(
+                                        sender,
+                                        "👋 Voltamos ao menu principal.\n\n"
+                                        "Escolha uma opção:\n\n"
+                                        "1️⃣ Horários\n"
+                                        "2️⃣ Escalas\n"
+                                        "3️⃣ Eventos\n"
+                                        "4️⃣ Envio de Mídias\n"
+                                        "5️⃣ Ofertas"
+                                    )
+                                )
+
+                            else:
+
+                                asyncio.create_task(
+                                    send_whatsapp_message(
+                                        sender,
+                                        "❌ Opção inválida.\n\n"
+                                        "Digite uma opção de 0 a 4."
+                                    )
+                                )
+
+
+                        elif current_menu == "ofertas":
+
+                            if text.strip() == "0":
+
+                                whatsapp_menu_state.pop(sender, None)
+
+                                asyncio.create_task(
+                                    send_whatsapp_message(
+                                        sender,
+                                        "👋 Voltamos ao menu principal.\n\n"
+                                        "Escolha uma opção:\n\n"
+                                        "1️⃣ Horários\n"
+                                        "2️⃣ Escalas\n"
+                                        "3️⃣ Eventos\n"
+                                        "4️⃣ Envio de Mídias\n"
+                                        "5️⃣ Ofertas"
+                                    )
+                                )
+
+                            else:
+
+                                asyncio.create_task(
+                                    send_whatsapp_message(
+                                        sender,
+                                        "❌ Opção inválida.\n\n"
+                                        "Digite 0 para voltar ao menu principal."
+                                    )
+                                )
+
+                        elif current_menu == "escala_menu":
+
+                            if text.strip() == "1":
+
+                                try:
+                                    import sys
+                                    sys.path.insert(
+                                        0,
+                                        "/opt/holyrics/escala"
+                                    )
+
+                                    from escala import (
+                                        formatar_escala_completa
+                                    )
+
+                                    mensagem = formatar_escala_completa()
+
+                                    mensagem += (
+                                        "\n\n"
+                                        "🔄 *O que deseja fazer?*\n\n"
+                                        "1️⃣ Nova consulta\n"
+                                        "0️⃣ Finalizar"
+                                    )
+
+                                    whatsapp_menu_state[sender] = (
+                                        "escala_pos_resultado"
+                                    )
+
+                                    asyncio.create_task(
+                                        send_whatsapp_message(
+                                            sender,
+                                            mensagem
+                                        )
+                                    )
+
+                                except Exception:
+
+                                    logging.exception(
+                                        "ESCALA | Erro na escala completa"
+                                    )
+
+                                    whatsapp_menu_state[sender] = (
+                                        "escala_pos_resultado"
+                                    )
+
+                                    asyncio.create_task(
+                                        send_whatsapp_message(
+                                            sender,
+                                            "❌ Não foi possível consultar a escala no momento.\n\n"
+                                            "🔄 *O que deseja fazer?*\n\n"
+                                            "1️⃣ Nova consulta\n"
+                                            "0️⃣ Finalizar"
+                                        )
+                                    )
+
+
+                            elif text.strip() == "2":
+
+                                whatsapp_menu_state[sender] = "escala_data"
+
+                                asyncio.create_task(
+                                    send_whatsapp_message(
+                                        sender,
+                                        "📅 *CONSULTAR POR DATA*\n\n"
+                                        "Digite a data desejada no formato:\n\n"
+                                        "DD/MM/AAAA\n\n"
+                                        "Exemplo: 20/09/2026\n\n"
+                                        "0️⃣ Voltar"
+                                    )
+                                )
+
+
+                            elif text.strip() == "3":
+
+                                whatsapp_menu_state[sender] = "escala_nome"
+
+                                asyncio.create_task(
+                                    send_whatsapp_message(
+                                        sender,
+                                        "🔎 *CONSULTAR POR NOME*\n\n"
+                                        "Digite o nome que deseja consultar.\n\n"
+                                        "Você pode digitar apenas parte do nome.\n\n"
+                                        "Exemplo: Luciano\n\n"
+                                        "0️⃣ Voltar"
+                                    )
+                                )
+
+                            elif text.strip() == "4":
+
+                                whatsapp_menu_state[sender] = "escala_mes"
+
+                                asyncio.create_task(
+                                    send_whatsapp_message(
+                                        sender,
+                                        "📅 *CONSULTAR POR MÊS*\n\n"
+                                        "Escolha o mês:\n\n"
+                                        "1️⃣ Julho\n"
+                                        "2️⃣ Agosto\n"
+                                        "3️⃣ Setembro\n"
+                                        "4️⃣ Outubro\n\n"
+                                        "0️⃣ Voltar"
+                                    )
+                                )
+
+                            elif text.strip() == "5":
+
+                                try:
+                                    import sys
+                                    sys.path.insert(
+                                        0,
+                                        "/opt/holyrics/escala"
+                                    )
+
+                                    from escala import (
+                                        formatar_intercambios
+                                    )
+
+                                    mensagem = formatar_intercambios()
+
+                                    mensagem += (
+                                        "\n\n"
+                                        "🔄 *O que deseja fazer?*\n\n"
+                                        "1️⃣ Nova consulta\n"
+                                        "0️⃣ Finalizar"
+                                    )
+
+                                    whatsapp_menu_state[sender] = (
+                                        "escala_pos_resultado"
+                                    )
+
+                                    asyncio.create_task(
+                                        send_whatsapp_message(
+                                            sender,
+                                            mensagem
+                                        )
+                                    )
+
+                                except Exception:
+
+                                    logging.exception(
+                                        "ESCALA | Erro na consulta de intercâmbios"
+                                    )
+
+                                    whatsapp_menu_state[sender] = (
+                                        "escala_pos_resultado"
+                                    )
+
+                                    asyncio.create_task(
+                                        send_whatsapp_message(
+                                            sender,
+                                            "❌ Não foi possível consultar os intercâmbios no momento.\n\n"
+                                            "🔄 *O que deseja fazer?*\n\n"
+                                            "1️⃣ Nova consulta\n"
+                                            "0️⃣ Finalizar"
+                                        )
+                                    )
+
+
+
+
+                            elif text.strip() == "0":
+
+                                whatsapp_menu_state.pop(sender, None)
+
+                                asyncio.create_task(
+                                    send_whatsapp_message(
+                                        sender,
+                                        "👋 Voltamos ao menu principal.\n\n"
+                                        "Escolha uma opção:\n\n"
+                                        "1️⃣ Horários\n"
+                                        "2️⃣ Escalas\n"
+                                        "3️⃣ Eventos\n"
+                                        "4️⃣ Envio de Mídias"
+                                    )
+                                )
+
+
+                            else:
+
+                                asyncio.create_task(
+                                    send_whatsapp_message(
+                                        sender,
+                                        "❌ Opção inválida.\n\n"
+                                        "Escolha uma opção de 1 a 5 ou 0 para voltar."
+                                    )
+                                )
+
+                        elif current_menu == "eventos_data":
+
+                            if text.strip() == "0":
+
+                                whatsapp_menu_state[sender] = "eventos_menu"
+
+                                asyncio.create_task(
+                                    send_whatsapp_message(
+                                        sender,
+                                        "📅 *EVENTOS*\n\n"
+                                        "Escolha uma opção:\n\n"
+                                        "1️⃣ Próximos eventos\n"
+                                        "2️⃣ Consultar por data\n"
+                                        "3️⃣ Consultar por mês\n"
+                                        "4️⃣ Ver todos os eventos\n\n"
+                                        "0️⃣ Voltar"
+                                    )
+                                )
+
+                            else:
+
+                                try:
+                                    import sys
+                                    sys.path.insert(
+                                        0,
+                                        "/opt/holyrics/escala"
+                                    )
+
+                                    from eventos import (
+                                        consultar_data,
+                                        formatar_eventos
+                                    )
+
+                                    resultado = consultar_data(
+                                        text.strip()
+                                    )
+
+                                    mensagem = formatar_eventos(
+                                        resultado,
+                                        "📅 EVENTOS"
+                                    )
+
+                                    mensagem += (
+                                        "\n\n"
+                                        "🔄 *O que deseja fazer?*\n\n"
+                                        "1️⃣ Nova consulta\n"
+                                        "0️⃣ Finalizar"
+                                    )
+
+                                    whatsapp_menu_state[sender] = (
+                                        "eventos_pos_resultado"
+                                    )
+
+                                    asyncio.create_task(
+                                        send_whatsapp_message(
+                                            sender,
+                                            mensagem
+                                        )
+                                    )
+
+                                except Exception as e:
+
+                                    print(
+                                        f"Erro ao consultar eventos por data: {e}"
+                                    )
+
+                                    asyncio.create_task(
+                                        send_whatsapp_message(
+                                            sender,
+                                            "❌ Não foi possível consultar "
+                                            "os eventos.\n\n"
+                                            "Tente novamente."
+                                        )
+                                    )
+
+                        elif current_menu == "eventos_mes":
+
+                            if text.strip() == "0":
+
+                                whatsapp_menu_state[sender] = "eventos_menu"
+
+                                asyncio.create_task(
+                                    send_whatsapp_message(
+                                        sender,
+                                        "📅 *EVENTOS*\n\n"
+                                        "Escolha uma opção:\n\n"
+                                        "1️⃣ Próximos eventos\n"
+                                        "2️⃣ Consultar por data\n"
+                                        "3️⃣ Consultar por mês\n"
+                                        "4️⃣ Ver todos os eventos\n\n"
+                                        "0️⃣ Voltar"
+                                    )
+                                )
+
+                            else:
+
+                                try:
+                                    import sys
+                                    sys.path.insert(
+                                        0,
+                                        "/opt/holyrics/escala"
+                                    )
+
+                                    from eventos import (
+                                        consultar_mes,
+                                        formatar_eventos
+                                    )
+
+                                    resultado = consultar_mes(
+                                        text.strip()
+                                    )
+
+                                    mensagem = formatar_eventos(
+                                        resultado,
+                                        "📅 EVENTOS"
+                                    )
+
+                                    mensagem += (
+                                        "\n\n"
+                                        "🔄 *O que deseja fazer?*\n\n"
+                                        "1️⃣ Nova consulta\n"
+                                        "0️⃣ Finalizar"
+                                    )
+
+                                    whatsapp_menu_state[sender] = (
+                                        "eventos_pos_resultado"
+                                    )
+
+                                    asyncio.create_task(
+                                        send_whatsapp_message(
+                                            sender,
+                                            mensagem
+                                        )
+                                    )
+
+                                except Exception as e:
+
+                                    print(
+                                        f"Erro ao consultar eventos por mês: {e}"
+                                    )
+
+                                    asyncio.create_task(
+                                        send_whatsapp_message(
+                                            sender,
+                                            "❌ Não foi possível consultar "
+                                            "os eventos.\n\n"
+                                            "Tente novamente."
+                                        )
+                                    )
+
+
+
+
+
+                        elif current_menu == "escala_data":
+
+                            if text.strip() == "0":
+
+                                whatsapp_menu_state[sender] = "escala_menu"
+
+                                asyncio.create_task(
+                                    send_whatsapp_message(
+                                        sender,
+                                        "📅 *ESCALA DE REUNIÕES*\n\n"
+                                        "Escolha uma opção:\n\n"
+                                        "1️⃣ Ver escala completa\n"
+                                        "2️⃣ Consultar por data\n"
+                                        "3️⃣ Consultar por nome\n"
+                                        "4️⃣ Consultar por mês\n"
+                                        "5️⃣ Consultar Reuniões de Intercâmbio\n\n"
+                                        "0️⃣ Voltar"
+                                    )
+                                )
+
+                            else:
+
+                                try:
+                                    import sys
+                                    sys.path.insert(
+                                        0,
+                                        "/opt/holyrics/escala"
+                                    )
+
+                                    from escala import (
+                                        formatar_escala_data
+                                    )
+
+                                    mensagem = formatar_escala_data(
+                                        text.strip()
+                                    )
+
+                                    mensagem += (
+                                        "\n\n"
+                                        "🔄 *O que deseja fazer?*\n\n"
+                                        "1️⃣ Nova consulta\n"
+                                        "0️⃣ Finalizar"
+                                    )
+
+                                    whatsapp_menu_state[sender] = (
+                                        "escala_pos_resultado"
+                                    )
+
+                                    asyncio.create_task(
+                                        send_whatsapp_message(
+                                            sender,
+                                            mensagem
+                                        )
+                                    )
+
+                                except Exception:
+
+                                    logging.exception(
+                                        "ESCALA | Erro na consulta por data"
+                                    )
+
+                                    whatsapp_menu_state[sender] = (
+                                        "escala_pos_resultado"
+                                    )
+
+                                    asyncio.create_task(
+                                        send_whatsapp_message(
+                                            sender,
+                                            "❌ Não foi possível consultar a escala no momento.\n\n"
+                                            "🔄 *O que deseja fazer?*\n\n"
+                                            "1️⃣ Nova consulta\n"
+                                            "0️⃣ Finalizar"
+                                        )
+                                    )
+
+
+                        elif current_menu == "escala_nome":
+
+                            if text.strip() == "0":
+
+                                whatsapp_menu_state[sender] = "escala_menu"
+
+                                asyncio.create_task(
+                                    send_whatsapp_message(
+                                        sender,
+                                        "📅 *ESCALA DE REUNIÕES*\n\n"
+                                        "Escolha uma opção:\n\n"
+                                        "1️⃣ Ver escala completa\n"
+                                        "2️⃣ Consultar por data\n"
+                                        "3️⃣ Consultar por nome\n"
+                                        "4️⃣ Consultar por mês\n"
+                                        "5️⃣ Consultar Reniões de Intercâmbio\n\n"
+                                        "0️⃣ Voltar"
+                                    )
+                                )
+
+                            else:
+
+                                try:
+                                    import sys
+                                    sys.path.insert(
+                                        0,
+                                        "/opt/holyrics/escala"
+                                    )
+
+                                    from escala import (
+                                        formatar_escala_nome
+                                    )
+
+                                    mensagem = formatar_escala_nome(
+                                        text.strip()
+                                    )
+
+                                    mensagem += (
+                                        "\n\n"
+                                        "🔄 *O que deseja fazer?*\n\n"
+                                        "1️⃣ Nova consulta\n"
+                                        "0️⃣ Finalizar"
+                                    )
+
+                                    whatsapp_menu_state[sender] = (
+                                        "escala_pos_resultado"
+                                    )
+
+                                    asyncio.create_task(
+                                        send_whatsapp_message(
+                                            sender,
+                                            mensagem
+                                        )
+                                    )
+
+                                except Exception:
+
+                                    logging.exception(
+                                        "ESCALA | Erro na consulta por nome"
+                                    )
+
+                                    whatsapp_menu_state[sender] = (
+                                        "escala_pos_resultado"
+                                    )
+
+                                    asyncio.create_task(
+                                        send_whatsapp_message(
+                                            sender,
+                                            "❌ Não foi possível consultar a escala no momento.\n\n"
+                                            "🔄 *O que deseja fazer?*\n\n"
+                                            "1️⃣ Nova consulta\n"
+                                            "0️⃣ Finalizar"
+                                        )
+                                    )
+
+
+                        elif current_menu == "escala_mes":
+
+                            if text.strip() == "0":
+
+                                whatsapp_menu_state[sender] = "escala_menu"
+
+                                asyncio.create_task(
+                                    send_whatsapp_message(
+                                        sender,
+                                        "📅 *ESCALA DE REUNIÕES*\n\n"
+                                        "Escolha uma opção:\n\n"
+                                        "1️⃣ Ver escala completa\n"
+                                        "2️⃣ Consultar por data\n"
+                                        "3️⃣ Consultar por nome\n"
+                                        "4️⃣ Consultar por mês\n"
+                                        "5️⃣ Consultar Reuniões de Intercâmbio\n\n"
+                                        "0️⃣ Voltar"
+                                    )
+                                )
+
+                            else:
+
+                                try:
+                                    import sys
+                                    sys.path.insert(
+                                        0,
+                                        "/opt/holyrics/escala"
+                                    )
+
+                                    from escala import (
+                                        formatar_escala_mes
+                                    )
+
+                                    meses = {
+                                        "1": "07/2026",
+                                        "2": "08/2026",
+                                        "3": "09/2026",
+                                        "4": "10/2026",
+                                    }
+
+                                    mes_escolhido = meses.get(
+                                        text.strip()
+                                    )
+
+                                    if not mes_escolhido:
+                                        mensagem = (
+                                            "❌ Opção inválida.\n\n"
+                                            "Escolha uma opção de 1 a 4 "
+                                            "ou 0 para voltar."
+                                        )
+
+                                        asyncio.create_task(
+                                            send_whatsapp_message(
+                                                sender,
+                                                mensagem
+                                            )
+                                        )
+
+                                    else:
+                                        mensagem = formatar_escala_mes(
+                                            mes_escolhido
+                                        )
+
+                                    mensagem += (
+                                        "\n\n"
+                                        "🔄 *O que deseja fazer?*\n\n"
+                                        "1️⃣ Nova consulta\n"
+                                        "0️⃣ Finalizar"
+                                    )
+
+                                    whatsapp_menu_state[sender] = (
+                                        "escala_pos_resultado"
+                                    )
+
+                                    asyncio.create_task(
+                                        send_whatsapp_message(
+                                            sender,
+                                            mensagem
+                                        )
+                                    )
+
+                                except Exception:
+
+                                    logging.exception(
+                                        "ESCALA | Erro na consulta por mês"
+                                    )
+
+                                    whatsapp_menu_state[sender] = (
+                                        "escala_pos_resultado"
+                                    )
+
+                                    asyncio.create_task(
+                                        send_whatsapp_message(
+                                            sender,
+                                            "❌ Não foi possível consultar a escala no momento.\n\n"
+                                            "🔄 *O que deseja fazer?*\n\n"
+                                            "1️⃣ Nova consulta\n"
+                                            "0️⃣ Finalizar"
+                                        )
+                                    )
+
+
+                        elif current_menu == "escala_intercambio":
+
+                            if text.strip() == "0":
+
+                                whatsapp_menu_state[sender] = "escala_menu"
+
+                                asyncio.create_task(
+                                    send_whatsapp_message(
+                                        sender,
+                                        "📅 *ESCALA DE REUNIÕES*\n\n"
+                                        "Escolha uma opção:\n\n"
+                                        "1️⃣ Ver escala completa\n"
+                                        "2️⃣ Consultar por data\n"
+                                        "3️⃣ Consultar por nome\n"
+                                        "4️⃣ Consultar por mês\n"
+                                        "5️⃣ Consultar Reuniões de Intercâmbio\n\n"
+                                        "0️⃣ Voltar"
+                                    )
+                                )
+
+                            else:
+
+                                try:
+                                    import sys
+                                    sys.path.insert(
+                                        0,
+                                        "/opt/holyrics/escala"
+                                    )
+
+                                    from escala import (
+                                        formatar_intercambio
+                                    )
+
+                                    mensagem = formatar_intercambio(
+                                        text.strip()
+                                    )
+
+                                    mensagem += (
+                                        "\n\n"
+                                        "🔄 *O que deseja fazer?*\n\n"
+                                        "1️⃣ Nova consulta\n"
+                                        "0️⃣ Finalizar"
+                                    )
+
+                                    whatsapp_menu_state[sender] = (
+                                        "escala_pos_resultado"
+                                    )
+
+                                    asyncio.create_task(
+                                        send_whatsapp_message(
+                                            sender,
+                                            mensagem
+                                        )
+                                    )
+
+                                except Exception:
+
+                                    logging.exception(
+                                        "ESCALA | Erro na consulta de intercâmbio"
+                                    )
+
+                                    whatsapp_menu_state[sender] = (
+                                        "escala_pos_resultado"
+                                    )
+
+                                    asyncio.create_task(
+                                        send_whatsapp_message(
+                                            sender,
+                                            "❌ Não foi possível consultar o intercâmbio no momento.\n\n"
+                                            "🔄 *O que deseja fazer?*\n\n"
+                                            "1️⃣ Nova consulta\n"
+                                            "0️⃣ Finalizar"
+                                        )
+                                    )
+
+                        elif current_menu == "eventos_pos_resultado":
+
+                            if text.strip() == "1":
+
+                                whatsapp_menu_state[sender] = "eventos_menu"
+
+                                asyncio.create_task(
+                                    send_whatsapp_message(
+                                        sender,
+                                        "📅 *EVENTOS*\n\n"
+                                        "Escolha uma opção:\n\n"
+                                        "1️⃣ Próximos eventos\n"
+                                        "2️⃣ Consultar por data\n"
+                                        "3️⃣ Consultar por mês\n"
+                                        "4️⃣ Ver todos os eventos\n\n"
+                                        "0️⃣ Voltar"
+                                    )
+                                )
+
+                            elif text.strip() == "0":
+
+                                whatsapp_menu_state.pop(sender, None)
+
+                                asyncio.create_task(
+                                    send_whatsapp_message(
+                                        sender,
+                                        "👋 Atendimento finalizado.\n\n"
+                                        "Para acessar novamente o menu, "
+                                        "envie uma nova mensagem."
+                                    )
+                                )
+
+                            else:
+
+                                asyncio.create_task(
+                                    send_whatsapp_message(
+                                        sender,
+                                        "❌ Opção inválida.\n\n"
+                                        "Digite 1 para nova consulta "
+                                        "ou 0 para finalizar."
+                                    )
+                                )
+
+
+
+                        elif current_menu == "escala_pos_resultado":
+
+                            if text.strip() == "1":
+
+                                whatsapp_menu_state[sender] = "escala_menu"
+
+                                asyncio.create_task(
+                                    send_whatsapp_message(
+                                        sender,
+                                        "📅 *ESCALA DE REUNIÕES*\n\n"
+                                        "Escolha uma opção:\n\n"
+                                        "1️⃣ Ver escala completa\n"
+                                        "2️⃣ Consultar por data\n"
+                                        "3️⃣ Consultar por nome\n"
+                                        "4️⃣ Consultar por mês\n"
+                                        "5️⃣ Consultar Reuniões de Intercâmbio\n\n"
+                                        "0️⃣ Voltar"
+                                    )
+                                )
+
+                            elif text.strip() == "0":
+
+                                whatsapp_menu_state.pop(sender, None)
+
+                                asyncio.create_task(
+                                    send_whatsapp_message(
+                                        sender,
+                                        "👋 Consulta finalizada.\n\n"
+                                        "Quando quiser, envie uma mensagem para acessar o menu novamente."
+                                    )
+                                )
+
+                            else:
+
+                                asyncio.create_task(
+                                    send_whatsapp_message(
+                                        sender,
+                                        "❌ Opção inválida.\n\n"
+                                        "Escolha:\n\n"
+                                        "1️⃣ Nova consulta\n"
+                                        "0️⃣ Finalizar"
+                                    )
+                                )
+
+
                         elif current_menu == "midias":
+
 
 
                             if text.strip() == "1":
@@ -781,6 +1713,63 @@ async def receive_whatsapp_webhook(request: Request):
                                     )
                                 )
 
+                        elif text.strip() == "1":
+
+                            whatsapp_menu_state[sender] = "horarios"
+
+                            asyncio.create_task(
+                                send_whatsapp_message(
+                                    sender,
+                                    "🕐 *HORÁRIOS DAS REUNIÕES*\n\n"
+                                    "📅 *DOMINGO*\n"
+                                    "08:30 — Ceia do Senhor\n"
+                                    "09:45 — Escola Bíblica Dominical\n"
+                                    "19:30 — Pregação do Evangelho\n\n"
+                                    "📅 *SÁBADO*\n"
+                                    "20:00 — Culto de Jovens\n\n"
+                                    "📅 *QUARTA-FEIRA*\n"
+                                    "20:00 — Oração e Estudo\n\n"
+                                    "0️⃣ Voltar ao menu principal"
+                                )
+                            )
+
+
+                        elif text.strip() == "2":
+
+                            whatsapp_menu_state[sender] = "escala_menu"
+
+                            asyncio.create_task(
+                                send_whatsapp_message(
+                                    sender,
+                                    "📅 *ESCALA DE REUNIÕES*\n\n"
+                                    "Escolha uma opção:\n\n"
+                                    "1️⃣ Ver escala completa\n"
+                                    "2️⃣ Consultar por data\n"
+                                    "3️⃣ Consultar por nome\n"
+                                    "4️⃣ Consultar por mês\n"
+                                    "5️⃣ Consultar Reuniões de Intercâmbio\n\n"
+                                    "0️⃣ Voltar"
+                                )
+                            )
+
+                        elif text.strip() == "3":
+
+                            whatsapp_menu_state[sender] = "eventos_menu"
+
+                            asyncio.create_task(
+                                send_whatsapp_message(
+                                    sender,
+                                    "📅 *EVENTOS*\n\n"
+                                    "Escolha uma opção:\n\n"
+                                    "1️⃣ Próximos eventos\n"
+                                    "2️⃣ Consultar por data\n"
+                                    "3️⃣ Consultar por mês\n"
+                                    "4️⃣ Ver todos os eventos\n\n"
+                                    "0️⃣ Voltar"
+                                )
+                            )
+
+
                         elif text.strip() == "4":
 
                             whatsapp_menu_state[sender] = "midias"
@@ -798,6 +1787,36 @@ async def receive_whatsapp_webhook(request: Request):
                                 )
                             )
 
+                        elif text.strip() == "5":
+
+                            whatsapp_menu_state[sender] = "ofertas"
+
+                            asyncio.create_task(
+                                send_whatsapp_message(
+                                    sender,
+                                    "💰 *OFERTAS*\n\n"
+                                    "Para realizar sua oferta, utilize a chave Pix\n"
+                                    "da Casa de Oração Portinari.\n\n"
+                                    "🔑 *Chave Pix:*"
+                                )
+                            )
+
+                            asyncio.create_task(
+                                send_whatsapp_message(
+                                    sender,
+                                    "25.358.639/0001-74"
+                                )
+                            )
+
+                            asyncio.create_task(
+                                send_whatsapp_message(
+                                    sender,
+                                    "\nQue Deus abençoe sua vida e sua contribuição! 🙏\n\n"
+                                    "0️⃣ Voltar ao menu principal"
+                                )
+                            )
+
+
                         else:
 
                             asyncio.create_task(
@@ -808,7 +1827,8 @@ async def receive_whatsapp_webhook(request: Request):
                                     "1️⃣ Horários\n"
                                     "2️⃣ Escalas\n"
                                     "3️⃣ Eventos\n"
-                                    "4️⃣ Envio de Mídias\n\n"
+                                    "4️⃣ Envio de Mídias\n"
+                                    "5️⃣ Ofertas\n\n"
                                     "Digite o número da opção desejada."
                                 )
                             )
