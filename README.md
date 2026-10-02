@@ -1,162 +1,69 @@
 # WhatsApp → Holyrics
 
-Sistema de automação para recebimento de mídias pelo WhatsApp e processamento automático para utilização no Holyrics.
+Automação para receber mensagens e mídias pelo WhatsApp, organizar o processamento em um servidor DietPi/Raspberry Pi e disponibilizar os arquivos ao operador do Holyrics.
 
-O projeto utiliza a WhatsApp Cloud API, um webhook em FastAPI, Docker e um Raspberry Pi como servidor intermediário. Os arquivos recebidos são processados e encaminhados para um computador Windows onde o Holyrics está instalado.
+O serviço usa a WhatsApp Cloud API, FastAPI, Docker Compose e um compartilhamento SMB para transferir arquivos ao computador que executa o Holyrics.
+
+## Funcionalidades
+
+### WhatsApp
+
+- Acesso restrito a números cadastrados como membros da igreja.
+- Menu interativo para horários, escalas, eventos, envio de mídias, ofertas e busca de músicas por tema.
+- Deduplicação de mensagens recebidas pelo identificador da WhatsApp Cloud API.
+
+A lista de membros é mantida fora do repositório em `/data/config/membros.txt`: um número por linha, com código do país e DDD, somente dígitos. Linhas iniciadas por `#` são ignoradas. Se o arquivo não puder ser lido, o acesso é negado.
+
+### Mídias e YouTube
+
+- Recebe imagens, vídeos, documentos e áudios pelo WhatsApp.
+- Organiza os arquivos recebidos e os encaminha pela fila ao compartilhamento do Windows usado pelo Holyrics.
+- Baixa vídeos do YouTube em MP4, priorizando vídeo H.264/AVC, áudio AAC e resolução de até 720p.
+- Disponibiliza painel web protegido por autenticação HTTP Basic para envio e consulta de arquivos e acompanhamento do download.
+
+### Eventos
+
+- Interpreta convites enviados como imagem com Gemini.
+- Permite revisar e corrigir os dados antes do cadastro.
+- Consulta e cadastra eventos por meio da integração configurada com a planilha da igreja.
+
+O fluxo de eventos depende do módulo `eventos.py` e de suas credenciais, instalados e configurados no servidor. Esses arquivos e credenciais não são incluídos neste repositório.
+
+### Busca de músicas por tema
+
+- Pesquisa semanticamente as letras cadastradas no Holyrics, por exemplo, “a misericórdia e o amor de Deus”.
+- Compara o vetor da consulta com o índice local e apresenta os resultados por relevância em páginas de dez músicas.
+
+A busca requer o arquivo de índice `/data/lyrics_embeddings_gemini001.jsonl`, gerado a partir da biblioteca do Holyrics. O índice e as letras ficam nos dados locais do servidor e não são publicados neste repositório.
 
 ## Arquitetura
 
 ```text
-WhatsApp
-   │
-   │ WhatsApp Cloud API
-   ▼
-Cloudflare Tunnel
-   │
-   ▼
-FastAPI / Webhook
-   │
-   ▼
-Raspberry Pi
-   │
-   ├── Processamento
-   ├── Fila de arquivos
-   └── Download do YouTube
-   │
-   ▼
-Compartilhamento SMB
-   │
-   ▼
-Windows
-   │
-   ▼
-Holyrics
-
-Funcionalidades
-
-O sistema disponibiliza um menu pelo WhatsApp para selecionar o tipo de conteúdo que será enviado ao Holyrics.
-
-Menu de mídias
-Vídeo
-Imagem
-Documento
-Áudio
-YouTube
-Vídeos
-
-Recebe vídeos enviados pelo WhatsApp e os encaminha para o computador Windows.
-
-Imagens
-
-Recebe imagens pelo WhatsApp e encaminha automaticamente para o diretório de entrada do Holyrics.
-
-Documentos
-
-Permite o recebimento de documentos, como arquivos utilizados em apresentações.
-
-Áudios
-
-Recebe arquivos de áudio pelo WhatsApp e os encaminha para o Holyrics.
-
-YouTube
-
-O usuário pode selecionar a opção YouTube e enviar um link.
-
-O sistema utiliza yt-dlp para realizar o download e prioriza formatos compatíveis com o ambiente utilizado pelo Holyrics:
-
-Vídeo H.264 / AVC
-Áudio AAC
-Resolução de até 720p
-Saída em MP4
-
-O progresso do download pode ser acompanhado pela interface web.
-
-Fluxo de envio
-
-O fluxo principal pelo WhatsApp é:
-
-4 - Envio de Mídias
-        │
-        ├── 1 - Vídeo
-        ├── 2 - Imagem
-        ├── 3 - Documento
-        ├── 4 - Áudio
-        └── 5 - YouTube
-
-Após o recebimento de uma mídia, o sistema envia uma confirmação ao usuário.
-
-No caso do YouTube, após a conclusão do download é enviada uma mensagem informando que o vídeo foi baixado e está sendo processado pelo Holyrics.
-
-Componentes
-Raspberry Pi
-
-O servidor intermediário utiliza:
-
-Raspberry Pi
-DietPi
-Docker
-Docker Compose
-Python
-FastAPI
-Uvicorn
-yt-dlp
-FFmpeg
-WhatsApp
-
-A integração utiliza a:
-
 WhatsApp Cloud API
-
-O webhook recebe as mensagens enviadas ao número configurado na plataforma da Meta.
-
-Cloudflare
-
-O webhook pode ser disponibilizado externamente através de um Cloudflare Tunnel.
-
-Exemplo de arquitetura:
-
-Internet
-   │
-   ▼
-Cloudflare Tunnel
-   │
-   ▼
-Raspberry Pi:8080
-Windows
-
-O computador Windows disponibiliza um compartilhamento SMB utilizado pelo Raspberry Pi para transferir os arquivos.
-
-O diretório de entrada utilizado pelo projeto é:
-
-C:\Holyrics\Entrada
-
-Os arquivos transferidos podem então ser utilizados pelo Holyrics.
-
-Docker
-
-O projeto possui dois serviços principais:
-
-holyrics-api
-
-Responsável por:
-
-API FastAPI
-Webhook do WhatsApp
-Interface web
-Recebimento de arquivos
-Download do YouTube
-holyrics-worker
-
-Responsável pelo processamento da fila de arquivos e transferência para o Windows.
-
-A estrutura básica é:
-
-docker-compose.yml
         │
-        ├── holyrics-api
+        ▼
+Cloudflare Tunnel (opcional)
         │
-        └── holyrics-worker
-Estrutura do projeto
+        ▼
+FastAPI / webhook — holyrics-api
+        │
+        ├── WhatsApp, eventos e busca temática
+        ├── Arquivos e fila em /data
+        └── Painel web
+                 │
+                 ▼
+       holyrics-worker
+                 │
+                 ▼
+       Compartilhamento SMB
+                 │
+                 ▼
+       Computador Windows com Holyrics
+```
+
+## Estrutura versionada
+
+```text
 .
 ├── .env.example
 ├── .gitignore
@@ -167,148 +74,89 @@ Estrutura do projeto
     ├── queue_processor.py
     ├── queue_worker.py
     └── templates/
-        ├── index.html
-        ├── media_list.html
-        └── presentation_list.html
-Variáveis de ambiente
+```
 
-As configurações sensíveis são armazenadas em um arquivo .env.
+Os diretórios de dados, índices, mídias recebidas, logs e configurações locais não devem ser versionados.
 
-O repositório disponibiliza um modelo:
+## Configuração
 
-.env.example
+1. Clone o repositório e entre na pasta:
 
-As variáveis utilizadas atualmente são:
+   ```bash
+   git clone https://github.com/lucarvalho/whatsapp-holyrics.git
+   cd whatsapp-holyrics
+   ```
 
-HOLYRICS_USER=seu_usuario
-HOLYRICS_PASSWORD=sua_senha
+2. Crie o arquivo de ambiente a partir do modelo:
 
-WHATSAPP_ACCESS_TOKEN=seu_token_da_meta
-WHATSAPP_PHONE_NUMBER_ID=seu_phone_number_id
-Segurança
+   ```bash
+   cp .env.example .env
+   ```
 
-O arquivo .env não deve ser enviado para o GitHub.
+3. Preencha o `.env` com as credenciais da instalação:
 
-Tokens da Meta, senhas e credenciais de compartilhamento SMB nunca devem ser armazenados no código-fonte.
+   ```dotenv
+   HOLYRICS_USER=seu_usuario
+   HOLYRICS_PASSWORD=sua_senha
+   WHATSAPP_ACCESS_TOKEN=token_da_whatsapp_cloud_api
+   WHATSAPP_PHONE_NUMBER_ID=id_do_numero_whatsapp
+   VERIFY_TOKEN=token_de_verificacao_do_webhook
+   GEMINI_API_KEY=chave_da_api_gemini
+   ```
 
-O .gitignore do projeto já está configurado para impedir o versionamento desses arquivos.
+   `GEMINI_API_KEY` é usada para interpretar convites e gerar o vetor das consultas temáticas. O uso desses recursos depende de uma chave válida e das cotas disponíveis na API.
 
-Instalação
+4. Configure o compartilhamento SMB para que o caminho `/mnt/holyrics-entrada` aponte para a pasta de entrada do Holyrics no Windows.
 
-Clone o repositório:
+5. Crie `data/config/membros.txt` e inclua os números autorizados, um por linha. Exemplo de formato:
 
-git clone <URL_DO_REPOSITORIO>
-cd holyrics
+   ```text
+   # Código do país + DDD + número
+   5516999999999
+   ```
 
-Crie o arquivo de configuração:
+6. Para busca temática, coloque o índice de embeddings em `data/lyrics_embeddings_gemini001.jsonl`. A geração desse índice e a extração da biblioteca do Holyrics são etapas administrativas realizadas à parte.
 
-cp .env.example .env
+7. Construa e inicie os serviços:
 
-Edite o arquivo:
+   ```bash
+   docker compose build
+   docker compose up -d
+   docker compose ps
+   ```
 
-nano .env
+A configuração de túnel, credenciais SMB, integração com planilha e eventuais volumes adicionais depende do ambiente de cada igreja.
 
-Preencha as variáveis com os valores da instalação.
+## Serviços Docker
 
-Depois construa e inicialize os containers:
+- **holyrics-api**: API FastAPI, webhook do WhatsApp, painel web, recebimento de arquivos e downloads do YouTube.
+- **holyrics-worker**: processa a fila de arquivos e os transfere ao compartilhamento do Windows.
 
-docker compose build
-docker compose up -d
+O webhook usa a rota `/webhook/whatsapp`; o serviço web escuta na porta `8080`.
 
-Verifique os containers:
+## Segurança e dados
 
+Nunca publique:
+
+- `.env`, tokens, senhas ou credenciais SMB;
+- a lista de membros e números de telefone;
+- arquivos de letras, índices de embeddings ou mídias recebidas;
+- logs, backups locais ou credenciais da integração com planilhas.
+
+O `.gitignore` exclui configurações locais, dados e arquivos de backup. Guarde esses dados no servidor e mantenha cópias de segurança protegidas.
+
+## Operação
+
+Consulte o estado dos serviços:
+
+```bash
 docker compose ps
+docker compose logs -f holyrics-api
+docker compose logs -f holyrics-worker
+```
 
-Visualize os logs:
+Antes de atualizar uma instalação em uso, faça backup das configurações e dos dados locais. A publicação de código no GitHub não atualiza nem reinicia automaticamente os containers do servidor.
 
-docker compose logs -f
-Diretórios de dados
+## Licença
 
-Durante a execução, o sistema utiliza diretórios para organizar os arquivos recebidos e processados.
-
-Entre eles:
-
-data/
-├── incoming/
-├── processing/
-├── approved/
-├── error/
-├── youtube/
-├── images/
-├── videos/
-├── presentations/
-└── audio/
-
-Esses diretórios não fazem parte do repositório GitHub.
-
-Compartilhamento Windows
-
-O Raspberry Pi utiliza SMB/CIFS para acessar o diretório compartilhado no Windows.
-
-Exemplo:
-
-Windows
-C:\Holyrics\Entrada
-
-        │ SMB
-        ▼
-
-Raspberry Pi
-/mnt/holyrics-entrada
-
-As credenciais do compartilhamento devem ser armazenadas separadamente e nunca devem ser publicadas no GitHub.
-
-Compatibilidade de vídeos
-
-Durante o desenvolvimento foi identificado que alguns vídeos do YouTube podem ser disponibilizados em codecs que não são adequados ao ambiente utilizado pelo Holyrics.
-
-Por esse motivo, o download utiliza preferência por:
-
-H.264 / AVC
-AAC
-MP4
-
-com resolução de até 720p.
-
-Backup
-
-Antes de alterações importantes, recomenda-se realizar um backup da configuração do projeto.
-
-Os arquivos de configuração podem ser armazenados separadamente das mídias e dos logs.
-
-Não devem ser publicados no GitHub:
-
-tokens
-senhas
-credenciais SMB
-arquivos .env
-mídias recebidas
-logs
-backups locais
-Status do projeto
-
-O fluxo principal de automação está funcionando:
-
- WhatsApp Cloud API
- Webhook
- Menu interativo
- Recebimento de vídeos
- Recebimento de imagens
- Recebimento de documentos
- Recebimento de áudios
- Download de vídeos do YouTube
- Conversão/download em formato compatível
- Fila de processamento
- Transferência para Windows
- Integração com o diretório utilizado pelo Holyrics
- Mensagens de confirmação pelo WhatsApp
- Docker / Docker Compose
-Objetivo
-
-O objetivo do projeto é simplificar o envio e a disponibilização de mídias para utilização durante os cultos, permitindo que arquivos sejam recebidos pelo WhatsApp e automaticamente encaminhados para o ambiente utilizado pelo Holyrics.
-
-Licença
-
-Este projeto pode ser utilizado como base para estudos, automação e integração entre WhatsApp, servidores Linux, Windows e Holyrics.
-
-Defina uma licença adequada ao projeto antes de distribuir ou reutilizar o código em outros ambientes.
+Este repositório não define uma licença de distribuição. Defina uma licença adequada antes de permitir reutilização ou redistribuição do projeto.
